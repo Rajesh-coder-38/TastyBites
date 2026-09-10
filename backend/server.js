@@ -13,16 +13,26 @@ const userRoutes = require("./routes/userRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 
+// Connect MongoDB
+connectDB();
+
 const app = express();
+
+// =========================
+// CORS CONFIGURATION
+// =========================
 
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://tasty-bites-eight-weld.vercel.app",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
+      // Allow requests without an origin
+      // (Postman, browser direct API requests, etc.)
       if (!origin) {
         return callback(null, true);
       }
@@ -37,6 +47,10 @@ app.use(
   })
 );
 
+// =========================
+// MIDDLEWARE
+// =========================
+
 app.use(express.json());
 
 app.use(
@@ -45,54 +59,53 @@ app.use(
   })
 );
 
-/*
-  MongoDB connection middleware
-
-  Vercel serverless function-এর ক্ষেত্রে
-  প্রতিটি request-এর আগে database connection
-  নিশ্চিত করা হবে।
-*/
-app.use(async (req, res, next) => {
-  try {
-    await connectDB();
-    next();
-  } catch (error) {
-    console.error("Database connection error:", error.message);
-
-    res.status(500).json({
-      message: "Database connection failed",
-      error: error.message,
-    });
-  }
-});
+// =========================
+// LOCAL UPLOADS
+// =========================
 
 app.use(
   "/uploads",
   express.static(path.join(__dirname, "uploads"))
 );
 
-// API Routes
+// =========================
+// API ROUTES
+// =========================
+
 app.use("/api/auth", authRoutes);
+
 app.use("/api/menu-items", menuRoutes);
+
 app.use("/api/users", userRoutes);
+
 app.use("/api/orders", orderRoutes);
+
 app.use("/api/dashboard", dashboardRoutes);
 
-// Home route
+// =========================
+// ROOT ROUTE
+// =========================
+
 app.get("/", (req, res) => {
   res.status(200).json({
     message: "TastyBites API is running",
   });
 });
 
-// 404 route
+// =========================
+// 404 ROUTE
+// =========================
+
 app.use((req, res) => {
   res.status(404).json({
     message: "Route not found",
   });
 });
 
-// Global error handler
+// =========================
+// ERROR HANDLER
+// =========================
+
 app.use((err, req, res, next) => {
   console.error("Server Error:", err.stack);
 
@@ -102,14 +115,17 @@ app.use((err, req, res, next) => {
   });
 });
 
+// =========================
+// SERVER
+// =========================
+
 const PORT = process.env.PORT || 5000;
 
-// Local development-এর জন্য server চালু হবে
-// Vercel production-এ exported app ব্যবহার করবে।
 if (process.env.NODE_ENV !== "production") {
   app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 
+// Export app for Vercel
 module.exports = app;
