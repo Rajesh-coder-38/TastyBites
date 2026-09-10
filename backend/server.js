@@ -3,10 +3,6 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const path = require("path");
 
-// =====================================================
-// LOAD ENVIRONMENT VARIABLES FIRST
-// =====================================================
-
 dotenv.config();
 
 // =====================================================
@@ -41,9 +37,27 @@ const app = express();
 // CORS
 // =====================================================
 
+const allowedOrigins = [
+  "http://localhost:5173",
+
+  // তোমার Vercel frontend URL এখানে বসাবে
+  "https://tasty-bites-eight-weld.vercel.app",
+];
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: function (origin, callback) {
+      // Postman/server-to-server requests
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
@@ -66,39 +80,22 @@ app.use(
 
 app.use(
   "/uploads",
-  express.static(
-    path.join(__dirname, "uploads")
-  )
+  express.static(path.join(__dirname, "uploads"))
 );
 
 // =====================================================
 // API ROUTES
 // =====================================================
 
-app.use(
-  "/api/auth",
-  authRoutes
-);
+app.use("/api/auth", authRoutes);
 
-app.use(
-  "/api/menu-items",
-  menuRoutes
-);
+app.use("/api/menu-items", menuRoutes);
 
-app.use(
-  "/api/users",
-  userRoutes
-);
+app.use("/api/users", userRoutes);
 
-app.use(
-  "/api/orders",
-  orderRoutes
-);
+app.use("/api/orders", orderRoutes);
 
-app.use(
-  "/api/dashboard",
-  dashboardRoutes
-);
+app.use("/api/dashboard", dashboardRoutes);
 
 // =====================================================
 // ROOT ROUTE
@@ -124,52 +121,29 @@ app.use((req, res) => {
 // ERROR HANDLER
 // =====================================================
 
-app.use(
-  (err, req, res, next) => {
-    console.error(
-      "Server Error:",
-      err.stack
-    );
+app.use((err, req, res, next) => {
+  console.error("Server Error:", err.stack);
 
-    res.status(500).json({
-      message:
-        "Internal Server Error",
-      error: err.message,
-    });
-  }
-);
+  res.status(500).json({
+    message: "Internal Server Error",
+    error: err.message,
+  });
+});
 
 // =====================================================
-// SERVER PORT
+// LOCAL SERVER
 // =====================================================
 
-const PORT =
-  process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
+
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 
 // =====================================================
-// START SERVER
+// EXPORT APP FOR VERCEL
 // =====================================================
 
-app.listen(
-  PORT,
-  () => {
-    console.log(
-      `Server running on http://localhost:${PORT}`
-    );
-
-    console.log(
-      "Cloudinary Cloud Name:",
-      process.env.CLOUDINARY_CLOUD_NAME
-    );
-
-    console.log(
-      "Cloudinary API Key Loaded:",
-      !!process.env.CLOUDINARY_API_KEY
-    );
-
-    console.log(
-      "Cloudinary API Secret Loaded:",
-      !!process.env.CLOUDINARY_API_SECRET
-    );
-  }
-);
+module.exports = app;
