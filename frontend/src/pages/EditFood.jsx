@@ -505,7 +505,7 @@ function EditFood() {
                     "http"
                   )
                     ? currentImage
-                    : `http://localhost:5000${currentImage}`
+                    : `https://tasty-bites-rg3x.vercel.app${currentImage}`
                 }
                 alt={formData.name}
                 onError={(e) => {

@@ -26,10 +26,10 @@ function MyOrders() {
 
     // Local backend image
     if (image.startsWith("/")) {
-      return `http://localhost:5000${image}`;
+      return `https://tasty-bites-rg3x.vercel.app${image}`;
     }
 
-    return `http://localhost:5000/${image}`;
+    return `https://tasty-bites-rg3x.vercel.app/${image}`;
   };
 
   // ==========================================

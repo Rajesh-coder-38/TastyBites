@@ -28,7 +28,7 @@ function AdminPanel() {
       return image;
     }
 
-    return `http://localhost:5000${image}`;
+    return `https://tasty-bites-rg3x.vercel.app${image}`;
   };
 
   // ==========================================

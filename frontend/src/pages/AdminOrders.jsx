@@ -403,7 +403,7 @@ function AdminOrders() {
                             {item.menuItem
                               ?.image ? (
                               <img
-                                src={`http://localhost:5000${item.menuItem.image}`}
+                                src={`https://tasty-bites-rg3x.vercel.app${item.menuItem.image}`}
                                 alt={itemName}
                               />
                             ) : (
