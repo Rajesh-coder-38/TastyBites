@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const MenuItem = require("../models/menuItem");
 const cloudinary = require("../config/cloudinary");
 
@@ -7,18 +8,16 @@ const cloudinary = require("../config/cloudinary");
 
 const getMenuItems = async (req, res) => {
   try {
-    const menuItems = await MenuItem.find().sort({
-      createdAt: -1,
-    });
+    const menuItems = await MenuItem.find().sort({ createdAt: -1 });
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Menu items fetched successfully",
       menuItems,
     });
   } catch (error) {
     console.error("Get Menu Items Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to fetch menu items",
       error: error.message,
     });
@@ -31,9 +30,18 @@ const getMenuItems = async (req, res) => {
 
 const getMenuItem = async (req, res) => {
   try {
-    const menuItem = await MenuItem.findById(
-      req.params.id
-    );
+    const { id } = req.params;
+
+    console.log("Fetching menu item:", id);
+
+    // Check whether the ID is a valid MongoDB ObjectId
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid menu item ID",
+      });
+    }
+
+    const menuItem = await MenuItem.findById(id);
 
     if (!menuItem) {
       return res.status(404).json({
@@ -41,17 +49,14 @@ const getMenuItem = async (req, res) => {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Menu item fetched successfully",
       menuItem,
     });
   } catch (error) {
-    console.error(
-      "Get Single Menu Item Error:",
-      error
-    );
+    console.error("Get Single Menu Item Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to fetch menu item",
       error: error.message,
     });
@@ -70,67 +75,33 @@ const createMenuItem = async (req, res) => {
       category,
       price,
       availability,
+      image,
     } = req.body;
 
-    // -----------------------------------------------
-    // VALIDATION
-    // -----------------------------------------------
-
-    if (
-      !name ||
-      !description ||
-      !category ||
-      price === undefined
-    ) {
+    if (!name || !description || !category || price === undefined) {
       return res.status(400).json({
-        message:
-          "Name, description, category and price are required",
+        message: "Name, description, category and price are required",
       });
     }
-
-    if (Number(price) < 0) {
-      return res.status(400).json({
-        message: "Price cannot be negative",
-      });
-    }
-
-    // -----------------------------------------------
-    // CREATE MENU ITEM
-    // -----------------------------------------------
 
     const menuItem = await MenuItem.create({
-      name: name.trim(),
-
-      description: description.trim(),
-
+      name,
+      description,
       category,
-
-      price: Number(price),
-
+      price,
       availability:
-        availability !== undefined
-          ? availability
-          : true,
-
-      image: "",
+        availability === undefined ? true : availability,
+      image: image || "",
     });
 
-    console.log(
-      "Menu item created:",
-      menuItem._id
-    );
-
-    res.status(201).json({
+    return res.status(201).json({
       message: "Menu item created successfully",
       menuItem,
     });
   } catch (error) {
-    console.error(
-      "Create Menu Item Error:",
-      error
-    );
+    console.error("Create Menu Item Error:", error);
 
-    res.status(500).json({
+    return res.status(500).json({
       message: "Failed to create menu item",
       error: error.message,
     });
@@ -143,8 +114,15 @@ const createMenuItem = async (req, res) => {
 
 const updateMenuItem = async (req, res) => {
   try {
-    const menuItem =
-      await MenuItem.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid menu item ID",
+      });
+    }
+
+    const menuItem = await MenuItem.findById(id);
 
     if (!menuItem) {
       return res.status(404).json({
@@ -161,17 +139,12 @@ const updateMenuItem = async (req, res) => {
       image,
     } = req.body;
 
-    // -----------------------------------------------
-    // UPDATE FIELDS
-    // -----------------------------------------------
-
     if (name !== undefined) {
-      menuItem.name = name.trim();
+      menuItem.name = name;
     }
 
     if (description !== undefined) {
-      menuItem.description =
-        description.trim();
+      menuItem.description = description;
     }
 
     if (category !== undefined) {
@@ -179,13 +152,7 @@ const updateMenuItem = async (req, res) => {
     }
 
     if (price !== undefined) {
-      if (Number(price) < 0) {
-        return res.status(400).json({
-          message: "Price cannot be negative",
-        });
-      }
-
-      menuItem.price = Number(price);
+      menuItem.price = price;
     }
 
     if (availability !== undefined) {
@@ -196,23 +163,17 @@ const updateMenuItem = async (req, res) => {
       menuItem.image = image;
     }
 
-    const updatedMenuItem =
-      await menuItem.save();
+    const updatedMenuItem = await menuItem.save();
 
-    res.status(200).json({
-      message:
-        "Menu item updated successfully",
+    return res.status(200).json({
+      message: "Menu item updated successfully",
       menuItem: updatedMenuItem,
     });
   } catch (error) {
-    console.error(
-      "Update Menu Item Error:",
-      error
-    );
+    console.error("Update Menu Item Error:", error);
 
-    res.status(500).json({
-      message:
-        "Failed to update menu item",
+    return res.status(500).json({
+      message: "Failed to update menu item",
       error: error.message,
     });
   }
@@ -224,8 +185,15 @@ const updateMenuItem = async (req, res) => {
 
 const deleteMenuItem = async (req, res) => {
   try {
-    const menuItem =
-      await MenuItem.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid menu item ID",
+      });
+    }
+
+    const menuItem = await MenuItem.findById(id);
 
     if (!menuItem) {
       return res.status(404).json({
@@ -233,21 +201,16 @@ const deleteMenuItem = async (req, res) => {
       });
     }
 
-    await menuItem.deleteOne();
+    await MenuItem.findByIdAndDelete(id);
 
-    res.status(200).json({
-      message:
-        "Menu item deleted successfully",
+    return res.status(200).json({
+      message: "Menu item deleted successfully",
     });
   } catch (error) {
-    console.error(
-      "Delete Menu Item Error:",
-      error
-    );
+    console.error("Delete Menu Item Error:", error);
 
-    res.status(500).json({
-      message:
-        "Failed to delete menu item",
+    return res.status(500).json({
+      message: "Failed to delete menu item",
       error: error.message,
     });
   }
@@ -259,327 +222,113 @@ const deleteMenuItem = async (req, res) => {
 
 const searchMenuItems = async (req, res) => {
   try {
-    const { name } = req.query;
+    const search = req.query.search?.trim() || "";
 
-    if (!name) {
-      return res.status(400).json({
-        message: "Search name is required",
+    if (!search) {
+      const menuItems = await MenuItem.find().sort({
+        createdAt: -1,
+      });
+
+      return res.status(200).json({
+        message: "Menu items fetched successfully",
+        menuItems,
       });
     }
 
     const menuItems = await MenuItem.find({
-      name: {
-        $regex: name,
-        $options: "i",
-      },
-    });
+      $or: [
+        {
+          name: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          description: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          category: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ],
+    }).sort({ createdAt: -1 });
 
-    res.status(200).json({
-      message: "Menu search successful",
+    return res.status(200).json({
+      message: "Menu search completed successfully",
       menuItems,
     });
   } catch (error) {
-    console.error(
-      "Search Menu Error:",
-      error
-    );
+    console.error("Search Menu Items Error:", error);
 
-    res.status(500).json({
-      message:
-        "Failed to search menu items",
+    return res.status(500).json({
+      message: "Failed to search menu items",
       error: error.message,
     });
   }
 };
 
 // =====================================================
-// FILTER BY CATEGORY
-// =====================================================
-
-const filterByCategory = async (req, res) => {
-  try {
-    const { category } = req.query;
-
-    if (!category) {
-      return res.status(400).json({
-        message: "Category is required",
-      });
-    }
-
-    const menuItems = await MenuItem.find({
-      category: {
-        $regex: category,
-        $options: "i",
-      },
-    });
-
-    res.status(200).json({
-      message:
-        "Menu filtered successfully",
-      menuItems,
-    });
-  } catch (error) {
-    console.error(
-      "Filter Menu Error:",
-      error
-    );
-
-    res.status(500).json({
-      message: "Failed to filter menu",
-      error: error.message,
-    });
-  }
-};
-
-// =====================================================
-// UPLOAD MENU IMAGE TO CLOUDINARY
+// UPLOAD / UPDATE MENU IMAGE
 // =====================================================
 
 const uploadMenuImage = async (req, res) => {
   try {
-    console.log("");
-    console.log(
-      "========================================"
-    );
-    console.log(
-      "IMAGE UPLOAD REQUEST RECEIVED"
-    );
-    console.log(
-      "========================================"
-    );
+    const { id } = req.params;
 
-    // -----------------------------------------------
-    // CHECK FILE
-    // -----------------------------------------------
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        message: "Invalid menu item ID",
+      });
+    }
 
     if (!req.file) {
-      console.log("NO FILE RECEIVED");
-
       return res.status(400).json({
         message: "Please upload an image",
       });
     }
 
-    console.log(
-      "File name:",
-      req.file.originalname
-    );
-
-    console.log(
-      "File type:",
-      req.file.mimetype
-    );
-
-    console.log(
-      "File size:",
-      req.file.size,
-      "bytes"
-    );
-
-    // -----------------------------------------------
-    // FIND MENU ITEM
-    // -----------------------------------------------
-
-    const menuItem =
-      await MenuItem.findById(req.params.id);
+    const menuItem = await MenuItem.findById(id);
 
     if (!menuItem) {
-      console.log(
-        "MENU ITEM NOT FOUND:",
-        req.params.id
-      );
-
       return res.status(404).json({
         message: "Menu item not found",
       });
     }
 
-    console.log(
-      "Menu item found:",
-      menuItem.name
-    );
+    // Multer/Cloudinary middleware normally provides the uploaded URL
+    const imageUrl = req.file.path || req.file.secure_url;
 
-    console.log(
-      "Menu item ID:",
-      menuItem._id.toString()
-    );
-
-    // -----------------------------------------------
-    // CHECK CLOUDINARY CONFIGURATION
-    // -----------------------------------------------
-
-    console.log("");
-    console.log(
-      "Checking Cloudinary configuration..."
-    );
-
-    console.log(
-      "Cloudinary cloud name:",
-      process.env.CLOUDINARY_CLOUD_NAME
-    );
-
-    console.log(
-      "Cloudinary API key exists:",
-      !!process.env.CLOUDINARY_API_KEY
-    );
-
-    console.log(
-      "Cloudinary API secret exists:",
-      !!process.env.CLOUDINARY_API_SECRET
-    );
-
-    // -----------------------------------------------
-    // UPLOAD TO CLOUDINARY
-    // -----------------------------------------------
-
-    console.log("");
-    console.log(
-      "Starting Cloudinary upload..."
-    );
-
-    const uploadResult =
-      await new Promise(
-        (resolve, reject) => {
-          const uploadStream =
-            cloudinary.uploader.upload_stream(
-              {
-                folder:
-                  "tastybites/menu",
-
-                resource_type: "image",
-              },
-
-              (error, result) => {
-                if (error) {
-                  console.error("");
-                  console.error(
-                    "CLOUDINARY ERROR:"
-                  );
-                  console.error(error);
-
-                  reject(error);
-                  return;
-                }
-
-                console.log("");
-                console.log(
-                  "CLOUDINARY UPLOAD SUCCESS"
-                );
-
-                console.log(
-                  "Public ID:",
-                  result.public_id
-                );
-
-                console.log(
-                  "Secure URL:",
-                  result.secure_url
-                );
-
-                resolve(result);
-              }
-            );
-
-          uploadStream.end(
-            req.file.buffer
-          );
-        }
-      );
-
-    // -----------------------------------------------
-    // CHECK CLOUDINARY RESULT
-    // -----------------------------------------------
-
-    if (
-      !uploadResult ||
-      !uploadResult.secure_url
-    ) {
-      console.error(
-        "Cloudinary did not return a secure URL"
-      );
-
+    if (!imageUrl) {
       return res.status(500).json({
-        message:
-          "Cloudinary upload failed",
+        message: "Image upload URL was not generated",
       });
     }
 
-    // -----------------------------------------------
-    // SAVE CLOUDINARY URL IN MONGODB
-    // -----------------------------------------------
+    menuItem.image = imageUrl;
 
-    menuItem.image =
-      uploadResult.secure_url;
-
-    const updatedMenuItem =
-      await menuItem.save();
-
-    console.log("");
-    console.log(
-      "IMAGE URL SAVED TO MONGODB"
-    );
-
-    console.log(
-      "Saved image URL:",
-      updatedMenuItem.image
-    );
-
-    console.log(
-      "========================================"
-    );
-    console.log(
-      "IMAGE UPLOAD COMPLETED SUCCESSFULLY"
-    );
-    console.log(
-      "========================================"
-    );
-    console.log("");
-
-    // -----------------------------------------------
-    // RESPONSE
-    // -----------------------------------------------
+    const updatedMenuItem = await menuItem.save();
 
     return res.status(200).json({
-      message:
-        "Menu image uploaded successfully",
-
+      message: "Menu image uploaded successfully",
       menuItem: updatedMenuItem,
     });
   } catch (error) {
-    console.error("");
-    console.error(
-      "========================================"
-    );
-
-    console.error(
-      "CLOUDINARY UPLOAD ERROR"
-    );
-
-    console.error(
-      "Error message:",
-      error.message
-    );
-
-    console.error(
-      "Full error:",
-      error
-    );
-
-    console.error(
-      "========================================"
-    );
+    console.error("Upload Menu Image Error:", error);
 
     return res.status(500).json({
-      message:
-        "Failed to upload menu image",
-
+      message: "Failed to upload menu image",
       error: error.message,
     });
   }
 };
 
 // =====================================================
-// EXPORT
+// EXPORTS
 // =====================================================
 
 module.exports = {
@@ -589,6 +338,5 @@ module.exports = {
   updateMenuItem,
   deleteMenuItem,
   searchMenuItems,
-  filterByCategory,
   uploadMenuImage,
 };
